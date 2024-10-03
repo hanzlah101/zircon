@@ -51,3 +51,12 @@ export const MAX_FILE_SIZE = 1024 * 1024 * 5;
 export const MAX_PRODUCT_IMAGES = 10;
 
 export const DEFAULT_SHIPPING_PRICE = 200;
+
+export const STATES = [
+  "Punjab",
+  "Sindh",
+  "Balochistan",
+  "Khyber Pakhtunkhwa",
+  "Azad Kashmir",
+  "Gilgit Baltistan",
+] as const;

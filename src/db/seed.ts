@@ -34,7 +34,7 @@ async function seedUsers(tx: TX) {
   return usersData;
 }
 
-const userId = "b95ss4e075rhjzxiz4qn5t52";
+const userId = "euu3ezt6lgg4b4yohrcvxcuc";
 
 type Product = {
   id: string;

@@ -18,10 +18,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAuthModal } from "@/stores/use-auth-modal";
 
 export function Header() {
   const { cart } = useCartStore();
   const { onOpen } = useBagModal();
+
+  const { onOpen: onLogin } = useAuthModal();
 
   const cartItemsCount = useMemo(
     () => cart.reduce((acc, item) => acc + item.qty, 0),
@@ -38,7 +41,11 @@ export function Header() {
         <Logo wrapperClassName="hidden sm:block" />
         <LogoIcon wrapperClassName="sm:hidden" />
         <div className="flex items-center gap-x-4">
-          <HeaderButton icon={IconUser} label="Sign in" />
+          <HeaderButton
+            onClick={() => onLogin("login")}
+            icon={IconUser}
+            label="Sign in"
+          />
           <HeaderButton
             onClick={onOpen}
             icon={IconShoppingBag}
