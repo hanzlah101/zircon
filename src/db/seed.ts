@@ -1,18 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createId } from "@paralleldrive/cuid2";
 import { products, productSizes, reviews, users } from "./schema";
 import { CATEGORIES } from "@/lib/constants";
-import { PgTransaction } from "drizzle-orm/pg-core";
-import { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
-import { ExtractTablesWithRelations } from "drizzle-orm";
 import { db } from ".";
 
-type TX = PgTransaction<
-  PostgresJsQueryResultHKT,
-  typeof import("/Users/hanzlahjavaid/Desktop/coding/scents/src/db/schema"),
-  ExtractTablesWithRelations<
-    typeof import("/Users/hanzlahjavaid/Desktop/coding/scents/src/db/schema")
-  >
->;
+type TX = any;
 
 function randomDate() {
   return new Date(Date.now() + Math.random() * 1000 * 60 * 60 * 24 * 365);
