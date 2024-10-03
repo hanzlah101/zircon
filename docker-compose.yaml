@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+  db:
+    container_name: postgres
+    image: postgres:12.19-alpine3.20
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: PGQEaA9ZyF5b
+      POSTGRES_USER: scentsdb_owner
+      POSTGRES_DB: scentsdb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data/pgdata
+
+volumes:
+  db-data:
