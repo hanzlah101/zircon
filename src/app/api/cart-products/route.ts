@@ -3,8 +3,6 @@ import { cartItemsSchema } from "@/validators/product.validators";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-export const runtime = "edge";
-
 const parseCartItems = (url: URL): unknown[] => {
   const items = [];
   for (const [key, value] of url.searchParams.entries()) {

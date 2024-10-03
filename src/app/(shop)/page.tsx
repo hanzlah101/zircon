@@ -5,8 +5,6 @@ import { ProductReelSkeleton } from "./_components/product-reel";
 import { Newsletter } from "./_components/newsletter";
 import { FeaturedProducts } from "./_components/featured-products";
 
-export const runtime = "edge";
-
 export default function HomePage() {
   const featuredProductsPromise = getFeaturedProducts();
 

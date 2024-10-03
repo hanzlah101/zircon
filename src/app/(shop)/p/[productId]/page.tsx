@@ -1,8 +1,6 @@
 import { getProduct } from "@/queries/products";
 import { ProductDetails } from "../_components/product-details";
 
-export const runtime = "edge";
-
 type ProductPageProps = {
   params: {
     productId: string;

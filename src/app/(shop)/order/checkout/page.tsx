@@ -2,8 +2,6 @@ import { validateRequest } from "@/lib/auth/validate-request";
 import { CheckoutForm } from "./_components/checkout-form";
 import { CheckoutProducts } from "./_components/checkout-products";
 
-export const runtime = "edge";
-
 export default async function page() {
   const { user } = await validateRequest();
 
