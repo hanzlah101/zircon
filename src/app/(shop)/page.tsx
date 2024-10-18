@@ -33,7 +33,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* <HeroVideo /> */}
+      <HeroVideo />
       <Newsletter />
     </div>
   );
