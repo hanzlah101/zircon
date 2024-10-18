@@ -9,11 +9,7 @@ type NumberInputProps = Omit<InputProps, "value" | "onChange"> & {
 const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
   ({ onChange, value, inputMode = "decimal", ...props }, ref) => {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (!event.target.value) {
-        onChange(undefined);
-      } else if (!isNaN(event.target.valueAsNumber)) {
-        onChange(event.target.valueAsNumber);
-      }
+      onChange(event.target.value);
     };
 
     return (
@@ -22,7 +18,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         type="number"
         value={value === null ? "" : value}
         onChange={handleChange}
-        step={inputMode === "decimal" ? "0.1" : "1"}
+        step={inputMode === "decimal" ? "0.01" : "1"}
         min={"0"}
         {...props}
       />

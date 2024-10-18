@@ -3,7 +3,7 @@
 import { use } from "react";
 
 import { ProductReel } from "./product-reel";
-import type { getFeaturedProducts } from "@/queries/products";
+import type { getFeaturedProducts } from "@/queries/product.queries";
 
 type FeaturedProductsProps = {
   featuredProductsPromise: ReturnType<typeof getFeaturedProducts>;

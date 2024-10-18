@@ -7,10 +7,12 @@ import { cn } from "@/lib/utils";
 import { Button, ButtonProps } from "./button";
 import { Spinner } from "./spinner";
 
-type StatusButtonProps = ButtonProps & {
+export type StatusProps = {
   status: MutationStatus;
   successMessage: string;
 };
+
+type StatusButtonProps = ButtonProps & StatusProps;
 
 const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
   ({ children, className, successMessage, ...props }, ref) => {
@@ -22,9 +24,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
 
     React.useEffect(() => {
       if (status === "success") {
-        setTimeout(() => {
-          setStatus("idle");
-        }, 2000);
+        setTimeout(() => setStatus("idle"), 2000);
       }
     }, [status]);
 
@@ -45,7 +45,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
             className={cn("flex items-center justify-center gap-1")}
           >
             {status === "pending" ? (
-              <Spinner />
+              <Spinner size={props.size === "lg" ? "lg" : undefined} />
             ) : status === "success" ? (
               <>
                 <motion.span

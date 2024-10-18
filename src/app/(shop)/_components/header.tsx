@@ -11,16 +11,22 @@ import {
   type Icon,
 } from "@tabler/icons-react";
 
+import type { User } from "lucia";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useCartStore } from "@/stores/use-cart-store";
+import { useAuthModal } from "@/stores/use-auth-modal";
+import { UserMenu } from "@/components/user-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAuthModal } from "@/stores/use-auth-modal";
 
-export function Header() {
+type HeaderProps = {
+  user: User | null;
+};
+
+export function Header({ user }: HeaderProps) {
   const { cart } = useCartStore();
   const { onOpen } = useBagModal();
 
@@ -32,7 +38,7 @@ export function Header() {
   );
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex h-20 w-full items-center bg-background/70 backdrop-blur-md">
+    <header className="sticky inset-x-0 top-0 z-50 flex w-full items-center bg-background/70 py-5 backdrop-blur-md sm:py-8">
       <div className="mx-auto flex w-full max-w-screen-xl items-center justify-between px-4">
         <div className="flex items-center gap-x-4">
           <ThemeToggle />
@@ -41,11 +47,15 @@ export function Header() {
         <Logo wrapperClassName="hidden sm:block" />
         <LogoIcon wrapperClassName="sm:hidden" />
         <div className="flex items-center gap-x-4">
-          <HeaderButton
-            onClick={() => onLogin("login")}
-            icon={IconUser}
-            label="Sign in"
-          />
+          {user && user.emailVerified ? (
+            <UserMenu user={user} />
+          ) : (
+            <HeaderButton
+              onClick={() => onLogin(user ? "verify-otp" : "login")}
+              icon={IconUser}
+              label={user ? "Verify Email" : "Sign in"}
+            />
+          )}
           <HeaderButton
             onClick={onOpen}
             icon={IconShoppingBag}
@@ -90,7 +100,7 @@ function HeaderButton({
         {...props}
       >
         <Icon className="size-5 md:size-[23px]" />
-        {children}
+        {children ? children : null}
       </TooltipTrigger>
       <TooltipContent side={"bottom"} sideOffset={10}>
         {label}

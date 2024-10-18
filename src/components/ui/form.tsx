@@ -170,15 +170,24 @@ const FormMessage = React.forwardRef<
 });
 FormMessage.displayName = "FormMessage";
 
-const FormError = () => {
+const FormError = (props: React.HTMLAttributes<HTMLDivElement>) => {
   const { formState, clearErrors } = useFormContext();
+  const errorRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (formState.errors.root && errorRef.current) {
+      errorRef.current.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  }, [formState.errors.root]);
 
   return (
     <ErrorMessage
       errors={formState.errors}
       name="root"
       render={({ message }) => (
-        <Alert variant={"destructive"}>
+        <Alert ref={errorRef} variant={"destructive"} {...props}>
           <IconAlertTriangle />
           <AlertTitle>{message}</AlertTitle>
           <AlertCancel onClick={() => clearErrors("root")} />

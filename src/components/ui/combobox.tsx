@@ -8,6 +8,7 @@ import type {
 
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { useControllableState } from "@/hooks/use-controllable-state";
 import {
   Command,
   CommandEmpty,
@@ -28,8 +29,8 @@ const ComboboxList = CommandList;
 interface ComboboxContextType {
   value: string;
   onValueChange: (value: string) => void;
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  open?: boolean;
+  setOpen: (value: boolean) => void;
 }
 
 const ComboboxContext = React.createContext<ComboboxContextType | undefined>(
@@ -47,10 +48,15 @@ const useCombobox = () => {
 interface ComboboxProps extends PopoverProps {
   value: string;
   onValueChange: (value: string) => void;
+  open?: boolean;
+  onOpenChange?: (value: boolean) => void;
 }
 
 const Combobox = ({ value, onValueChange, ...props }: ComboboxProps) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useControllableState<boolean>({
+    prop: props.open,
+    onChange: props.onOpenChange,
+  });
 
   return (
     <ComboboxContext.Provider value={{ value, onValueChange, open, setOpen }}>
@@ -72,7 +78,7 @@ const ComboboxTrigger = ({
   return (
     <PopoverTrigger
       className={cn(
-        "flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-accent/50 px-3 py-2 text-sm transition focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:border-transparent data-[state=open]:ring-2 data-[state=open]:ring-ring",
+        "flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-accent/50 px-3 py-2 text-sm transition focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 data-[state=open]:border-transparent data-[state=open]:ring-2 data-[state=open]:ring-ring",
         className,
       )}
       {...props}
@@ -83,11 +89,14 @@ const ComboboxTrigger = ({
   );
 };
 
-interface ComboboxContentProps extends PopoverContentProps {}
+interface ComboboxContentProps extends PopoverContentProps {
+  commandProps?: Omit<React.ComponentProps<typeof Command>, "className">;
+}
 
 const ComboboxContent = ({
   children,
   className,
+  commandProps,
   ...props
 }: ComboboxContentProps) => {
   return (
@@ -95,7 +104,10 @@ const ComboboxContent = ({
       className={cn("overflow-hidden p-0 shadow-lg", className)}
       {...props}
     >
-      <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-[18px]">
+      <Command
+        className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-[18px]"
+        {...commandProps}
+      >
         {children}
       </Command>
     </PopoverContent>

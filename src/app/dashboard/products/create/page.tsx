@@ -1,3 +1,5 @@
+import { ProductForm } from "../_components/product-form";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,12 +8,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ProductForm } from "../_components/product-form";
 
 export default function CreateProductPage() {
   return (
-    <div className="w-full space-y-4">
-      <Breadcrumb className="hidden md:flex">
+    <div className="w-full">
+      <Breadcrumb className="mb-6 hidden sm:block">
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink href={"/dashboard"}>Dashboard</BreadcrumbLink>

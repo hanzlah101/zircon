@@ -24,11 +24,12 @@ import { onUniqueConstraintError } from "@/lib/errors";
 import { sendEmail } from "@/lib/send-email";
 import { validateRequest } from "@/lib/auth/validate-request";
 import { isWithinExpirationDate } from "oslo";
+import { SITE_URL } from "@/lib/constants";
 import { lucia } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 import VerificationEmail from "@emails/verification-email";
 import PasswordResetEmail from "@emails/password-reset-email";
-import { SITE_URL } from "@/lib/constants";
 
 export const signUp = createServerAction()
   .input(signUpSchema)
@@ -226,3 +227,20 @@ export const resetPassword = createServerAction()
     await lucia.invalidateUserSessions(verificationToken.userId);
     await createSession(verificationToken.userId);
   });
+
+export const logout = createServerAction().handler(async () => {
+  const { session } = await validateRequest();
+
+  if (!session) {
+    throw new ZSAError("NOT_AUTHORIZED", "Unauthorized");
+  }
+
+  await lucia.invalidateSession(session.id);
+
+  const sessionCookie = lucia.createBlankSessionCookie();
+  cookies().set(
+    sessionCookie.name,
+    sessionCookie.value,
+    sessionCookie.attributes,
+  );
+});

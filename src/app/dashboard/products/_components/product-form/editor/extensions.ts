@@ -1,14 +1,18 @@
 import {
   AIHighlight,
-  CharacterCount,
+  Color,
+  CustomKeymap,
   GlobalDragHandle,
+  HighlightExtension,
   HorizontalRule,
   Placeholder,
   StarterKit,
   TaskItem,
   TaskList,
+  TextStyle,
   TiptapImage,
   TiptapLink,
+  TiptapUnderline,
   UpdatedImage,
   Youtube,
 } from "novel/extensions";
@@ -18,6 +22,7 @@ import { UploadImagesPlugin } from "novel/plugins";
 import { cx } from "class-variance-authority";
 
 const aiHighlight = AIHighlight;
+
 const placeholder = Placeholder;
 const tiptapLink = TiptapLink.configure({
   HTMLAttributes: {
@@ -38,13 +43,13 @@ const tiptapImage = TiptapImage.extend({
 }).configure({
   allowBase64: true,
   HTMLAttributes: {
-    class: cx("rounded-lg border border-muted/50"),
+    class: cx("rounded-lg border border-muted"),
   },
 });
 
 const updatedImage = UpdatedImage.configure({
   HTMLAttributes: {
-    class: cx("rounded-lg border border-muted/50"),
+    class: cx("rounded-lg border border-muted"),
   },
 });
 
@@ -115,8 +120,6 @@ const youtube = Youtube.configure({
   inline: false,
 });
 
-const characterCount = CharacterCount.configure();
-
 export const defaultExtensions = [
   starterKit,
   placeholder,
@@ -128,6 +131,10 @@ export const defaultExtensions = [
   horizontalRule,
   aiHighlight,
   youtube,
-  characterCount,
+  TiptapUnderline,
+  HighlightExtension,
+  TextStyle,
+  Color,
+  CustomKeymap,
   GlobalDragHandle,
 ];

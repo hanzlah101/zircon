@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { formatPrice } from "@/lib/utils";
-import { DEFAULT_SHIPPING_PRICE } from "@/lib/constants";
+import { SHIPPING_PRICES } from "@/lib/constants";
 import {
   Card,
   CardContent,
@@ -11,9 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { BagItem } from "@/app/(shop)/_components/bag-item";
+import { BagItem, BagItemSkeleton } from "@/app/(shop)/_components/bag-item";
 import { useBagItems } from "@/stores/use-bag-items";
 import { IconInfoCircleFilled } from "@tabler/icons-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSearchParams } from "next/navigation";
+import { parseAsStringEnum, useQueryState } from "nuqs";
+import { orderShippingTypeEnum } from "@/db/schema";
 import {
   Tooltip,
   TooltipContent,
@@ -21,16 +25,42 @@ import {
 } from "@/components/ui/tooltip";
 
 export function CheckoutProducts() {
-  const { data, productWithQty } = useBagItems();
+  const searchParams = useSearchParams();
+
+  const buyNowItem = useMemo(() => {
+    const mode = (searchParams.get("mode") || "cart") as "cart" | "buy-now";
+
+    if (mode === "buy-now") {
+      const qty = parseInt(searchParams.get("qty") || "1", 10);
+      const productId = searchParams.get("productId") as string;
+      const sizeId = searchParams.get("sizeId") as string;
+      return { qty, productId, sizeId };
+    }
+  }, [searchParams]);
+
+  const { inStockItems, productWithQty, isPending } = useBagItems(buyNowItem, {
+    throwOnError: true,
+  });
+
+  const [shippingType] = useQueryState(
+    "shipping_type",
+    parseAsStringEnum(orderShippingTypeEnum.enumValues).withDefault("standard"),
+  );
+
+  const shippingFee = SHIPPING_PRICES.find(({ type }) => type === shippingType)
+    ?.amount as number;
 
   const subtotal = useMemo(() => {
-    return data?.reduce((acc, curr) => {
-      const { qty } = productWithQty(curr);
+    return inStockItems?.reduce((acc, curr) => {
+      const cartItem = productWithQty(curr);
+
+      const qty = !!buyNowItem ? buyNowItem.qty : cartItem.qty;
+
       return acc + qty * Number(curr.size.price);
     }, 0) as number;
-  }, [data, productWithQty]);
+  }, [inStockItems, productWithQty, buyNowItem]);
 
-  const total = subtotal + DEFAULT_SHIPPING_PRICE;
+  const total = subtotal + shippingFee;
 
   return (
     <Card className="h-fit">
@@ -40,7 +70,7 @@ export function CheckoutProducts() {
       </CardHeader>
 
       <CardContent>
-        <div className="space-y-3.5 pt-5 text-sm">
+        <div className="space-y-3.5 text-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center text-muted-foreground">
               <p>Subtotal</p>
@@ -53,11 +83,15 @@ export function CheckoutProducts() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <p className="font-medium">{formatPrice(subtotal)}</p>
+            {isPending ? (
+              <Skeleton className="h-5 w-28 rounded" />
+            ) : (
+              <p className="font-medium">{formatPrice(subtotal)}</p>
+            )}
           </div>
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Shipping</p>
-            <p className="font-medium">{formatPrice(DEFAULT_SHIPPING_PRICE)}</p>
+            <p className="font-medium">{formatPrice(shippingFee)}</p>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Taxes</p>
@@ -68,19 +102,27 @@ export function CheckoutProducts() {
         <div className="mb-6 border-b pb-6">
           <div className="flex items-center justify-between pt-5 text-sm">
             <p>Total</p>
-            <p className="text-lg font-medium">{formatPrice(total)}</p>
+            {isPending ? (
+              <Skeleton className="h-[27px] w-32 rounded" />
+            ) : (
+              <p className="text-lg font-medium">{formatPrice(total)}</p>
+            )}
           </div>
         </div>
 
-        <ul className="space-y-4 divide-y">
-          {data?.map((product, index) => (
-            <BagItem
-              className={index > 0 ? "pt-4" : ""}
-              key={product.id + product.size.id}
-              product={productWithQty(product)}
-            />
-          ))}
-        </ul>
+        {isPending ? (
+          <BagItemSkeleton count={!!buyNowItem ? 1 : undefined} />
+        ) : (
+          <ul className="space-y-4 divide-y">
+            {inStockItems?.map((product, index) => (
+              <BagItem
+                className={index > 0 ? "pt-4" : ""}
+                key={product.id + product.size.id}
+                product={productWithQty(product)}
+              />
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

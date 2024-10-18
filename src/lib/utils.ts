@@ -13,3 +13,7 @@ export function formatPrice(price: string | number) {
     maximumFractionDigits: 2,
   }).format(Number(price));
 }
+
+export function capitalize(text: string) {
+  return `${text[0].toUpperCase()}${text.slice(1)}`.replace("_", " ");
+}

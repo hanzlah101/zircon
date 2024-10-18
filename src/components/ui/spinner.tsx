@@ -8,7 +8,7 @@ const spinnerVariants = cva("animate-spin shrink-0", {
     size: {
       sm: "size-4",
       md: "size-5",
-      lg: "size-7",
+      lg: "size-6",
     },
   },
   defaultVariants: {

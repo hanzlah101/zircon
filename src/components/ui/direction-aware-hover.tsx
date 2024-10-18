@@ -90,7 +90,7 @@ export const DirectionAwareHover = ({
               fill
               alt="image"
               src={imageUrl}
-              objectFit="contain"
+              objectFit="cover"
               draggable={false}
               className={cn(
                 "h-full w-full scale-[1.15] rounded-lg",

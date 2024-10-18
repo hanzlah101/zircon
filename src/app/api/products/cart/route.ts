@@ -1,7 +1,9 @@
-import { getCartProducts } from "@/queries/products";
+import { z } from "zod";
+import { getCartProducts } from "@/queries/product.queries";
 import { cartItemsSchema } from "@/validators/product.validators";
 import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+
+export const dynamic = "force-dynamic";
 
 const parseCartItems = (url: URL): unknown[] => {
   const items = [];

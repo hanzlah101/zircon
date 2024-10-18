@@ -18,8 +18,7 @@ export const lucia = new Lucia(adapter, {
       secure: env.NODE_ENV === "production",
     },
   },
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getUserAttributes: ({ passwordHash, ...rest }) => {
+  getUserAttributes: ({ passwordHash: _, ...rest }) => {
     return rest;
   },
   getSessionAttributes() {

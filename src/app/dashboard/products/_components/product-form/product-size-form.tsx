@@ -12,6 +12,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
 import { ProductSchema } from "@/validators/product.validators";
 import { Button } from "@/components/ui/button";
 import { IconTrash } from "@tabler/icons-react";
@@ -46,7 +47,7 @@ export function ProductSizeForm({
   return (
     <AccordionItem value={index.toString()}>
       <AccordionTrigger className="font-semibold">
-        Size {value ? `${value}ml` : ` #${index + 1}`}
+        Size {value ? `${Number(value)} ml` : ` #${index + 1}`}
       </AccordionTrigger>
 
       <AccordionContent>
@@ -134,15 +135,15 @@ export function ProductSizeForm({
 
           <FormField
             control={form.control}
-            name={`sizes.${index}.salePrice`}
+            name={`sizes.${index}.compareAtPrice`}
             disabled={disabled}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sale Price</FormLabel>
+                <FormLabel>Compare at price</FormLabel>
                 <FormControl>
                   <NumberInput
                     inputMode="decimal"
-                    placeholder="Enter sale price"
+                    placeholder="Enter compare at price"
                     {...field}
                   />
                 </FormControl>

@@ -1,5 +1,6 @@
-import { getProduct } from "@/queries/products";
+import { getProductById } from "@/queries/product.queries";
 import { ProductDetails } from "../_components/product-details";
+import { notFound } from "next/navigation";
 
 type ProductPageProps = {
   params: {
@@ -8,11 +9,13 @@ type ProductPageProps = {
 };
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const productPromise = getProduct(params.productId);
+  const product = await getProductById(params.productId);
+
+  if (!product) notFound();
 
   return (
-    <div className="mx-auto max-w-screen-xl px-4 py-8 md:py-12">
-      <ProductDetails productPromise={productPromise} />
+    <div className="mx-auto max-w-screen-xl px-4 py-6">
+      <ProductDetails product={product} />
     </div>
   );
 }

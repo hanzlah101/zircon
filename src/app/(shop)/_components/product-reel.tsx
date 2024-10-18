@@ -13,7 +13,6 @@ import { cn, formatPrice } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCartStore } from "@/stores/use-cart-store";
 import { useBagModal } from "@/stores/use-bag-modal";
-import { useQueryClient } from "@tanstack/react-query";
 
 type ProductReelProps = {
   product: {
@@ -28,7 +27,6 @@ type ProductReelProps = {
 export function ProductReel({ product }: ProductReelProps) {
   const { addToCart } = useCartStore();
   const { onOpen } = useBagModal();
-  const queryClient = useQueryClient();
 
   const image = useMemo(
     () => product.images.sort((a, b) => a.order - b.order)[0],
@@ -66,14 +64,23 @@ export function ProductReel({ product }: ProductReelProps) {
       productId: product.id,
       sizeId: selectedSize?.id,
       stock: selectedSize?.stock,
-      isSelected: true,
     });
 
     onOpen();
-    queryClient.invalidateQueries({ queryKey: ["cart-products"] });
   };
 
   const isOutOfStock = !selectedSize || selectedSize?.stock <= 0;
+
+  const { price, compareAtPrice } = useMemo(() => {
+    const price = selectedSize?.price || firstSize?.price || sizes[0].price;
+
+    const compareAtPrice =
+      selectedSize?.compareAtPrice ||
+      firstSize?.compareAtPrice ||
+      sizes[0].compareAtPrice;
+
+    return { price, compareAtPrice };
+  }, [selectedSize, firstSize, sizes]);
 
   useEffect(() => {
     if (!selectedSize) {
@@ -141,9 +148,14 @@ export function ProductReel({ product }: ProductReelProps) {
         {product.title}
         {sizes.length === 1 ? ` - ${sizes[0].value} ml` : null}
       </h1>
-      <h1 className="mt-1 font-semibold md:text-xl">
-        {formatPrice(selectedSize?.price || firstSize?.price || sizes[0].price)}
-      </h1>
+      <div className="mt-1 flex items-end gap-x-2">
+        <h1 className="font-semibold md:text-xl">{formatPrice(price)}</h1>
+        {compareAtPrice ? (
+          <h1 className="text-sm font-medium text-muted-foreground line-through md:text-base">
+            {formatPrice(compareAtPrice)}
+          </h1>
+        ) : null}
+      </div>
     </Link>
   );
 }

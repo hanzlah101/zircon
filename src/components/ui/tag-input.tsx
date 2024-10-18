@@ -76,7 +76,7 @@ const TagInput: React.FC<TagInputProps> = ({
 
   return (
     <div className="group min-h-10 w-full">
-      <div className="z-10 flex min-h-10 w-full flex-wrap items-center rounded-md border bg-accent/50 px-2.5 py-1 transition group-focus-within:border-transparent group-focus-within:ring-2 group-focus-within:ring-ring">
+      <div className="z-10 flex min-h-10 w-full flex-wrap items-center rounded-md border bg-accent/50 px-1.5 py-1 transition group-focus-within:border-transparent group-focus-within:ring-2 group-focus-within:ring-ring">
         <div className="flex max-h-[300px] w-full flex-wrap gap-1 overflow-y-auto">
           {value.map((keyword, index) => (
             <button

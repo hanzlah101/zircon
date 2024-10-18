@@ -3,6 +3,7 @@ import { verificationTokens } from "@/db/schema";
 import { lucia } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import { generateId } from "lucia";
+import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { userAgent } from "next/server";
 import { createDate, TimeSpan } from "oslo";
@@ -43,6 +44,8 @@ export async function createSession(userId: string) {
     sessionCookie.value,
     sessionCookie.attributes,
   );
+
+  revalidatePath("/", "layout");
 }
 
 export async function generateVerificationCode(userId: string) {

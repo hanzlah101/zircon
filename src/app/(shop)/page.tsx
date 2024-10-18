@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getFeaturedProducts } from "@/queries/products";
+import { getFeaturedProducts } from "@/queries/product.queries";
 import { Hero, HeroVideo } from "./_components/hero";
 import { ProductReelSkeleton } from "./_components/product-reel";
 import { Newsletter } from "./_components/newsletter";
@@ -33,7 +33,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <HeroVideo />
+      {/* <HeroVideo /> */}
       <Newsletter />
     </div>
   );

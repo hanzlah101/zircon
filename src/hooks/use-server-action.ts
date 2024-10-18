@@ -31,7 +31,9 @@ export const useServerAction = <
     inferServerActionInput<THandler>
   >({
     mutationFn: async (input) => {
-      const [data, err] = await action(input);
+      const result = await action(input);
+      if (!result) return;
+      const [data, err] = result;
       if (err) throw err;
       return data;
     },

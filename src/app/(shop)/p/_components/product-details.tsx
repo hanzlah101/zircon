@@ -1,15 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import parse from "html-react-parser";
 import useCarousel from "embla-carousel-react";
-import { use, useCallback, useEffect, useMemo, useState } from "react";
-import { notFound } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryState, parseAsInteger } from "nuqs";
 import { useCartStore } from "@/stores/use-cart-store";
 
 import type { ProductImage } from "@/db/types";
-import type { getProduct } from "@/queries/products";
+import type { getProductById } from "@/queries/product.queries";
 
 import {
   type CarouselApi,
@@ -20,11 +20,11 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
+import { Label } from "@/components/ui/label";
 import { cn, formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { IconMinus, IconPlus, IconShoppingBag } from "@tabler/icons-react";
 import { useBagModal } from "@/stores/use-bag-modal";
-import { useQueryClient } from "@tanstack/react-query";
 import { RatingStarsPreview } from "../../_components/rating-stars-preview";
 import {
   Accordion,
@@ -34,24 +34,11 @@ import {
 } from "@/components/ui/accordion";
 
 type ProductDetailsProps = {
-  productPromise: ReturnType<typeof getProduct>;
+  product: NonNullable<Awaited<ReturnType<typeof getProductById>>>;
 };
 
-export function ProductDetails({ productPromise }: ProductDetailsProps) {
-  const product = use(productPromise);
-
-  if (!product) return notFound();
-
-  return <Content product={product} />;
-}
-
-type ContentProps = {
-  product: NonNullable<Awaited<ReturnType<typeof getProduct>>>;
-};
-
-function Content({ product }: ContentProps) {
+export function ProductDetails({ product }: ProductDetailsProps) {
   const { onOpen } = useBagModal();
-  const queryClient = useQueryClient();
 
   const sizes = useMemo(
     () => product.sizes.sort((a, b) => a.value - b.value),
@@ -78,6 +65,17 @@ function Content({ product }: ContentProps) {
   const { addToCart } = useCartStore();
   const [qty] = useQueryState("qty", parseAsInteger.withDefault(1));
 
+  const { price, compareAtPrice } = useMemo(() => {
+    const price = selectedSize?.price || firstSize?.price || sizes[0].price;
+
+    const compareAtPrice =
+      selectedSize?.compareAtPrice ||
+      firstSize?.compareAtPrice ||
+      sizes[0].compareAtPrice;
+
+    return { price, compareAtPrice };
+  }, [selectedSize, firstSize, sizes]);
+
   const handleAddToBag = () => {
     if (isOutOfStock) return;
 
@@ -85,19 +83,17 @@ function Content({ product }: ContentProps) {
       qty: qty || 1,
       productId: product.id,
       sizeId: selectedSize?.id,
-      isSelected: true,
       stock: selectedSize?.stock,
     });
 
     onOpen();
-    queryClient.invalidateQueries({ queryKey: ["cart-products"] });
   };
 
   return (
     <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
       <ProductCarousel images={product.images} />
       <div>
-        <h1 className="font-heading text-3xl font-semibold tracking-tighter md:text-4xl">
+        <h1 className="mb-1 font-heading text-3xl font-semibold tracking-tighter md:text-4xl">
           {product.title}
         </h1>
 
@@ -105,11 +101,17 @@ function Content({ product }: ContentProps) {
           {product.category}
         </span>
 
-        <h1 className="font-heading text-3xl font-semibold tracking-tighter md:text-4xl">
-          {formatPrice(
-            selectedSize?.price || firstSize?.price || sizes[0].price,
-          )}
-        </h1>
+        <div className="mt-1 flex items-end gap-x-2">
+          <h1 className="font-heading text-3xl tracking-tighter md:text-4xl">
+            {formatPrice(price)}
+          </h1>
+
+          {compareAtPrice ? (
+            <h1 className="font-heading text-xl tracking-tighter text-muted-foreground line-through md:text-2xl">
+              {formatPrice(compareAtPrice)}
+            </h1>
+          ) : null}
+        </div>
 
         <div className="mt-3 flex items-center gap-x-4">
           <div className="rounded-sm bg-yellow-600 px-2 py-0.5 text-sm text-white">
@@ -156,7 +158,9 @@ function Content({ product }: ContentProps) {
         ) : (
           <p className="mt-3 text-sm font-medium text-muted-foreground">
             Size:{" "}
-            <span className="text-foreground">{selectedSize?.value} ml</span>
+            <span className="text-foreground">
+              {selectedSize?.value || sizes[0].value} ml
+            </span>
           </p>
         )}
 
@@ -181,40 +185,35 @@ function Content({ product }: ContentProps) {
             radius="full"
             variant={"outline"}
             disabled={isOutOfStock}
-            className="mt-4 h-12 w-full bg-accent/50 text-[17px] md:h-14"
+            asChild
+            className="mt-4 h-12 w-full text-[17px] md:h-14"
           >
-            {isOutOfStock ? "Out of stock" : "Buy Now!"}
+            <Link
+              href={{
+                pathname: "/order/checkout",
+                query: {
+                  mode: "buy-now",
+                  productId: product.id,
+                  sizeId: selectedSize.id,
+                  qty,
+                },
+              }}
+            >
+              Buy Now!
+            </Link>
           </Button>
         ) : null}
 
-        <Accordion
-          type="single"
-          collapsible
-          className="mt-5"
-          defaultValue="description"
-        >
-          {product.description ? (
-            <AccordionItem value="description">
-              <AccordionTrigger>Description</AccordionTrigger>
-              <AccordionContent>
-                <article className="prose prose-neutral prose-invert pointer-events-none max-w-none prose-p:text-muted-foreground">
-                  {parse(product.description)}
-                </article>
-              </AccordionContent>
-            </AccordionItem>
-          ) : null}
-
-          {product.notes ? (
-            <AccordionItem value="notes">
-              <AccordionTrigger>Notes</AccordionTrigger>
-              <AccordionContent>
-                <article className="prose prose-neutral prose-invert pointer-events-none max-w-none prose-p:text-muted-foreground">
-                  {parse(product.notes)}
-                </article>
-              </AccordionContent>
-            </AccordionItem>
-          ) : null}
-        </Accordion>
+        {product.description || product.notes ? (
+          <Accordion
+            type="multiple"
+            className="mt-5"
+            defaultValue={["description"]}
+          >
+            <Prose content={product.description} label="Description" />
+            <Prose content={product.notes} label="Notes" />
+          </Accordion>
+        ) : null}
       </div>
     </div>
   );
@@ -283,14 +282,16 @@ function ProductCarousel({ images }: ProductCarouselProps) {
       </Carousel>
       {sortedImages.length > 1 ? (
         <div className="w-full overflow-hidden" ref={carouselThumbsRef}>
-          <ul className="flex list-none items-center gap-3 p-2">
+          <ul className="flex items-center gap-3 p-2">
             {sortedImages.map((img, index) => (
               <li
                 key={img.key + index}
                 onClick={() => onThumbClick(index)}
                 className={cn(
-                  "relative size-32 shrink-0 cursor-pointer overflow-hidden rounded-xl bg-muted ring-[3px] ring-offset-2 ring-offset-background transition",
-                  selectedIndex === index ? "ring-muted" : "ring-transparent",
+                  "relative size-28 shrink-0 cursor-pointer overflow-hidden rounded-xl bg-muted ring-[3px] ring-offset-2 ring-offset-background transition md:size-32",
+                  selectedIndex === index
+                    ? "ring-muted-foreground/50"
+                    : "ring-transparent",
                 )}
               >
                 <Image fill src={img.url} alt={img.name} objectFit="cover" />
@@ -300,6 +301,29 @@ function ProductCarousel({ images }: ProductCarouselProps) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+type ProseProps = {
+  label: string;
+  content: string | null;
+};
+
+function Prose({ content, label }: ProseProps) {
+  if (!content) return null;
+
+  return (
+    <AccordionItem value={label.toLowerCase()}>
+      <AccordionTrigger>{label}</AccordionTrigger>
+      <AccordionContent>
+        <article
+          data-state="preview"
+          className="prose prose-neutral max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground"
+        >
+          {parse(content)}
+        </article>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
@@ -349,7 +373,7 @@ function QtyInput({ stock }: QtyInputProps) {
 
   return (
     <div className="mt-3">
-      <p className="text-sm font-medium">Quantity</p>
+      <Label htmlFor="qty-input">Quantity</Label>
       <div className="mt-2 flex items-center">
         <Button
           size={"icon"}
@@ -365,6 +389,7 @@ function QtyInput({ stock }: QtyInputProps) {
         <input
           type="number"
           min="1"
+          id={"qty-input"}
           max={stock}
           value={inputValue}
           disabled={!stock}

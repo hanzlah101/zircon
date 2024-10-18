@@ -14,10 +14,10 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import type { ProductImage } from "./types";
 import { CATEGORIES } from "@/lib/constants";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
+import type { OrderEvent, ProductImage } from "./types";
 
 const lifecycleDates = {
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -34,7 +34,7 @@ export const userRoleEnum = pgEnum("user_role", [
 ]);
 
 export const users = pgTable(
-  "user",
+  "users",
   {
     id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
     email: varchar("email", { length: 255 }).notNull(),
@@ -55,6 +55,7 @@ export const userRelations = relations(users, ({ many }) => ({
   verificationTokens: many(verificationTokens),
   products: many(products),
   reviews: many(reviews),
+  orders: many(orders),
 }));
 
 export type User = typeof users.$inferSelect;
@@ -88,16 +89,22 @@ export const oAuthAccountRelations = relations(oauthAccounts, ({ one }) => ({
 
 export type OAuthAccount = typeof oauthAccounts.$inferSelect;
 
-export const sessions = pgTable("session", {
-  id: varchar("id").primaryKey(),
-  expiresAt: timestamp("expires_at").notNull(),
-  ipAddress: varchar("ip_address", { length: 255 }).notNull(),
-  userAgent: varchar("user_agent", { length: 255 }).notNull(),
-  userId: varchar("user_id", { length: 24 })
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  ...lifecycleDates,
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: varchar("id").primaryKey(),
+    expiresAt: timestamp("expires_at").notNull(),
+    ipAddress: varchar("ip_address", { length: 255 }).notNull(),
+    userAgent: varchar("user_agent", { length: 255 }).notNull(),
+    userId: varchar("user_id", { length: 24 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ...lifecycleDates,
+  },
+  (table) => ({
+    userIdIdx: index("session_user_id_idx").on(table.userId),
+  }),
+);
 
 export const sessionRelations = relations(sessions, ({ one }) => ({
   user: one(users, {
@@ -113,7 +120,7 @@ export const verificationTokenTypeEnum = pgEnum("verification_token_type", [
   "reset_password",
 ]);
 
-export const verificationTokens = pgTable("verification_token", {
+export const verificationTokens = pgTable("verification_tokens", {
   id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
   token: varchar("token", { length: 255 }).notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
@@ -147,12 +154,13 @@ export const productLabelEnum = pgEnum("product_label", [
   "none",
 ]);
 
-export const products = pgTable("product", {
+export const products = pgTable("products", {
   id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   notes: text("notes"),
   rating: decimal("rating", { precision: 2, scale: 1 }).notNull().default("0"),
+  isDeleted: boolean("is_deleted").default(false),
   category: text("category").notNull().$type<(typeof CATEGORIES)[number]>(),
   images: jsonb("images").array().$type<ProductImage[]>().notNull(),
   tags: varchar("tags", { length: 96 }).array().notNull(),
@@ -176,12 +184,12 @@ export const productRelations = relations(products, ({ one, many }) => ({
 export type Product = typeof products.$inferSelect;
 
 export const productSizes = pgTable(
-  "product_size",
+  "product_sizes",
   {
     id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
     value: integer("value").notNull(),
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-    salePrice: decimal("sale_price", { precision: 10, scale: 2 }),
+    compareAtPrice: decimal("compare_at_price", { precision: 10, scale: 2 }),
     stock: integer("stock").notNull(),
     productId: varchar("product_id", { length: 24 })
       .notNull()
@@ -203,7 +211,7 @@ export const productSizeRelations = relations(productSizes, ({ one }) => ({
 export type ProductSize = typeof productSizes.$inferSelect;
 
 export const reviews = pgTable(
-  "review",
+  "reviews",
   {
     id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
     rating: integer("rating").notNull(),
@@ -234,3 +242,151 @@ export const reviewRelations = relations(reviews, ({ one }) => ({
 }));
 
 export type Review = typeof reviews.$inferSelect;
+
+export const orderStatusEnum = pgEnum("order_status", [
+  "processing",
+  "dispatched",
+  "shipped",
+  "delivered",
+  "on_hold",
+  "cancelled",
+]);
+
+export const orderShippingTypeEnum = pgEnum("order_shipping_type", [
+  "standard",
+  "express",
+]);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
+    trackingId: varchar("tracking_id", { length: 22 }).notNull(),
+    status: orderStatusEnum("status").notNull().default("processing"),
+    shippingType: orderShippingTypeEnum("shipping_type").notNull(),
+
+    customerName: varchar("customer_name", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }),
+    phoneNumber: varchar("phone_number", { length: 255 }).notNull(),
+
+    state: varchar("state", { length: 255 }).notNull(),
+    city: varchar("city", { length: 255 }).notNull(),
+    address: varchar("address", { length: 255 }).notNull(),
+
+    estDeliveryDate: timestamp("estimated_delivery_date"),
+    events: jsonb("events").notNull().$type<OrderEvent>(),
+
+    userId: varchar("user_id", { length: 24 }).references(() => users.id, {
+      onDelete: "set null",
+    }),
+    ...lifecycleDates,
+  },
+  (table) => ({
+    trackingIdIdx: uniqueIndex("orders_tracking_id_idx").on(table.trackingId),
+    userIdIdx: index("orders_user_id_idx").on(table.userId),
+    emailIdx: index("orders_email_idx").on(table.email),
+  }),
+);
+
+export const orderRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+  payment: one(payments),
+  orderItems: many(orderItems),
+}));
+
+export type Order = typeof orders.$inferSelect;
+
+export const orderItems = pgTable("order_items", {
+  id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
+  size: integer("size").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  productId: varchar("product_id", { length: 24 })
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  orderId: varchar("order_id", { length: 24 })
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+});
+
+export const orderItemRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+}));
+
+export type OrderItem = typeof orderItems.$inferSelect;
+
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "paid",
+  "unpaid",
+  "refunded",
+]);
+
+export const paymentMethodsEnum = pgEnum("payment_method", [
+  "cash on delivery",
+  "credit card",
+  "easypaisa",
+  "jazzcash",
+]);
+
+export const payments = pgTable("payments", {
+  id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
+  status: paymentStatusEnum("status").notNull().default("unpaid"),
+  method: paymentMethodsEnum("method").notNull().default("cash on delivery"),
+  discount: decimal("discount", { precision: 10, scale: 2 }),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  shippingFee: decimal("shipping_fee", { precision: 10, scale: 2 }).notNull(),
+  taxes: decimal("taxes", { precision: 10, scale: 2 }).notNull().default("0"),
+  orderId: varchar("order_id", { length: 24 })
+    .notNull()
+    .unique()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  ...lifecycleDates,
+});
+
+export const paymentRelations = relations(payments, ({ one }) => ({
+  order: one(orders, {
+    fields: [payments.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export type Payment = typeof payments.$inferSelect;
+
+export const discountCodeTypeEnum = pgEnum("discount_code_type", [
+  "percentage",
+  "fixed amount",
+]);
+
+export const discountCodes = pgTable(
+  "discount_code",
+  {
+    id: varchar("id", { length: 24 }).primaryKey().$defaultFn(createId),
+    code: text("code").notNull(),
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    amountType: discountCodeTypeEnum("amount_type").notNull(),
+    minOrderAmount: decimal("min_order_amount", {
+      precision: 10,
+      scale: 2,
+    }).notNull(),
+    maxRedemptions: integer("max_redemptions"),
+    timesRedeemed: integer("times_redeemed").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    expiresAt: timestamp("expires_at"),
+    ...lifecycleDates,
+  },
+  (table) => ({
+    couponCodeIdx: uniqueIndex("coupon_code_idx").on(table.code),
+  }),
+);
+
+export type DiscountCode = typeof discountCodes.$inferSelect;
